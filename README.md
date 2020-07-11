@@ -165,13 +165,13 @@ with patch("dummy.os") as dummy_os:
   print_flag() # This will print True, because we have patched the os in the namespace of dummy, and explicitly told the mock object (dummy_os) to return True when os.environ.get(...) is called.
 ```
 
-In this case, when testing, we could patch every case where we import `mongo` from `app.database`. In the namespace of each consumer, we could replace the mongo (MongoClient) object with our `mongomock.MongoClient`.
+In this case, when testing, we could patch every case where we import `mongo` from `app.database`. In the namespace of each consumer, we could replace the `mongo` (MongoClient) object with our `mongomock.MongoClient`.
 
 However, as your application grows, you would need to keep adding more patches, whenever the mongo client is consumed.
 
 Seeing as all the database consumers import mongo from app.database, it would be convenient if we could patch `mongo` inside the `app.database` module. Then all the consumers could continue to import this object while being none-the-wiser. In our tests, we would only need to make sure the database object is mocked, which means as our application grows, our tests will still be valid.
 
-We could then consider that as our `src.database` imports `PyMongo`, we could mock PyMongo in the namespace of `src.database`.
+We could then consider that as our `src.database` imports `PyMongo`, we could mock `PyMongo` in the namespace of `src.database`.
 
 In your test you could try something like the following:
 ```
@@ -186,7 +186,7 @@ class TestApplication(unittest.TestCase):
       # Create the app and run the tests
       ...
 ```
-Now the above code Would mock PyMongo to refer to `mongomock.MongoClient`, but your test would still fail. This is because the `src.database` module has already been loaded prior to running your test. So yes, `PyMongo` now refers to `mongomock.MongoClient`, but your `mongo` variable is assigned to an instance of `PyMongo`, because it was run prior to the mocking. So you are mocking the class, but too late.
+Now the above code <b>would</b> mock `PyMongo` to refer to `mongomock.MongoClient`, but your test would still fail. This is because the `src.database` module has already been loaded prior to running your test. So yes, `PyMongo` now refers to `mongomock.MongoClient`, but your `mongo` variable is assigned to an instance of `PyMongo`, because it was run prior to the mocking. So you are mocking the class, but too late.
 
 You could then consider either trying to mock the `src.database` module before-hand, or patching the `src.database.mongo` object with our `mongomock.MongoClient` instance.
 
