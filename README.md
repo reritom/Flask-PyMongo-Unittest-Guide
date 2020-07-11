@@ -35,21 +35,21 @@ Our directory will look like this (ignoring the README, requirements.txt, and ot
     └── articles_test.py
 ```
 
-## src
-If you have worked with Flask before, you will know there is typically an application.py (or sometimes you put this in the __init__.py of the src). Then, you create a database.py which will contain your database object. When you create your first Flask app, often you will put the database object in your application.py, but as soon as you start splitting your application, you encounter circular import problems if the database exists in your application.py. So we create two files: "database.py", "application.py".
+## Source
+If you have worked with Flask before, you will know there is typically an `application.py` (or sometimes you put this in the `__init__.py` of the src). Then, you create a `database.py` which will contain your database object. When you create your first Flask app, often you will put the database object in your `application.py`, but as soon as you start splitting your application, you encounter circular import problems if the database exists in your `application.py`. So we create two files: `database.py`, `application.py`.
 
-The database.py is simple enough (though we will change this later). It starts by looking like this:
+The `database.py` is simple enough. It starts by looking like this:
 ```
 # src/database.py
 from flask_pymongo import PyMongo
 
 mongo = PyMongo()
 ```
-Whenever we want to access our database, we import and interact with this single "PyMongo" instance, assigned to the variable "mongo".
+Whenever we want to access our database, we import and interact with this single `PyMongo` instance, assigned to the variable `mongo`.
 
 The application will follow an application factory approach, and we will skip config objects because they don't matter in this case. So we can just pass the database address to it instead.
 
-The application.py will look like this:
+The `application.py` will look like this:
 ```
 # src/application.py
 from flask import Flask
@@ -74,7 +74,7 @@ def create_app(db_uri: str) -> Flask:
     return app
 ```
 
-You notice we have a class called the ArticleController in the controller subdirectory. The reason we can import it directly from the controllers module, as opposed to importing it like "from src.controllers.article_controller import ArticleController", is because we have import the controller into the "src/controllers/__init__.py".
+You notice we have a class called the `ArticleController` in the controller subdirectory. The reason we can import it directly from the controllers module, as opposed to importing it like `from src.controllers.article_controller import ArticleController`, is because we have imported the controller into the `src/controllers/__init__.py`.
 
 The ArticleController for now just focuses on the create_article aspect. For creating the article we won't do any validation. Instead we just take the content from the request, store it in our mongo collection, and return the data from the request along with the mongo document id, which resembles this:
 ```
@@ -107,7 +107,7 @@ class ArticleController:
         ...
 ```
 
-Finally, to run this application, we create the main.py, which can be just a few lines long in this case.
+Finally, to run this application, we create the `main.py`, which can be just a few lines long in this case.
 ```
 # main.py
 from src import create_app
@@ -118,9 +118,9 @@ if __name__=="__main__":
     app.run("0.0.0.0", port=5000, debug=False)
 
 ```
-Again, note that "create_app" can be imported directly from src, because in "src/__init__.py" I have added "from src.application import create_app". This is largely just for convenience when projects grow and become more nested.
+Again, note that `create_app` can be imported directly from src, because in `src/__init__.py` I have added `from src.application import create_app`. This is largely just for convenience when projects grow and become more nested.
 
-Now, with just these four files, we are able to run our app and create articles by posting data to the "/articles" endpoint, assuming you are running mongodb in the background, and pass the correct db_uri to the create_app function.
+Now, with just these four files, we are able to run our app and create articles by posting data to the `/articles` endpoint, assuming you are running mongodb in the background, and pass the correct db_uri to the create_app function.
 
 ## Testing
 So we can have an application that we can run. Now we want to test it. There are plenty of reasons for testing, including the ensure the application fits the expected behaviour, and to make sure no regressions (bugs) get introduced into the code down the line.
@@ -131,12 +131,12 @@ The approach we take for this is called "mocking". We want to mock Mongo, which 
 
 From the perspective of our code, we expect to be able to insert a document into our mocked mongo, and be able to retrieve in a later request.
 
-To do this we will use a library called mongomock, which provides a class called MongoClient, which acts the same in most nominal cases as the PyMongo MongoClient.
+To do this we will use a library called `mongomock`, which provides a class called `MongoClient`, which acts the same in most nominal cases as the `PyMongo.MongoClient`.
 
 ### Patching
-Patching is a way of replacing an object in the program namespace with something else. Often this is used to patch the environment or patch API calls. Imagine you have a script that runs in one way if os.environ["FLAG"] == True, and another way if os.environ["FLAG"] == False. You would want to create two tests, one for each case, and you then patch os.environ to set FLAG to the correct value for each test.
+Patching is a way of replacing an object in the program namespace with something else. Often this is used to patch the environment or patch API calls. Imagine you have a script that runs in one way if `os.environ["FLAG"] == True`, and another way if `os.environ["FLAG"] == False`. You would want to create two tests, one for each case, and you then patch os.environ to set FLAG to the correct value for each test.
 
-An important thing to note when patching, is that you patch and object in the namespace of the module which is consuming the object. What does this mean? Well, when you use os.environ, you import "os". Effectively it means in your module, there is now an object module called "os", and this is what you want to patch, because this is what your code is consuming when you use os.environ later.
+An important thing to note when patching, is that you patch and object in the namespace of the module which is consuming the object. What does this mean? Well, when you use os.environ, you import `os`. Effectively, it means that in your module there is now a module object called `os`, and this is what you want to patch, because this is what your code is consuming when you use os.environ later.
 
 Practically it is as follows:
 ```
@@ -160,13 +160,13 @@ with patch("dummy.os") as dummy_os:
   print_flag() # This will print True, because we have patched the os in the namespace of dummy, and explicitly told the mock object (dummy_os) to return True when os.environ.get(...) is called.
 ```
 
-In this case, when testing, we could patch every case where we import "mongo" from "app.database". In the namespace of each consumer, we could replace the mongo (MongoClient) object with our mongomock.MongoClient.
+In this case, when testing, we could patch every case where we import `mongo` from `app.database`. In the namespace of each consumer, we could replace the mongo (MongoClient) object with our `mongomock.MongoClient`.
 
 However, as your application grows, you would need to keep adding more patches, whenever the mongo client is consumed.
 
-Seeing as all the database consumers import mongo from app.database, it would be convenient if we could patch "mongo" inside the app.database modules. Then all the consumers could continue to import this object while being none-the-wiser. In our tests, we would only need to make sure the database object is mocked, which means as our application grows, our tests will still be valid.
+Seeing as all the database consumers import mongo from app.database, it would be convenient if we could patch `mongo` inside the `app.database` module. Then all the consumers could continue to import this object while being none-the-wiser. In our tests, we would only need to make sure the database object is mocked, which means as our application grows, our tests will still be valid.
 
-We could then consider that as our "src.database" imports PyMongo, we could mock PyMongo in the namespace of "src.database".
+We could then consider that as our `src.database` imports `PyMongo`, we could mock PyMongo in the namespace of `src.database`.
 
 In your test you could try something like the following:
 ```
@@ -181,11 +181,11 @@ class TestApplication(unittest.TestCase):
       # Create the app and run the tests
       ...
 ```
-Now the above code Would mock PyMongo to refer to mongomock.MongoClient, but your test would still fail. This is because the src.database module has already been loaded prior to running your test. So yes, PyMongo now refers to mongomock.MongoClient, but your mongo variable is assigned to an instance of PyMongo, because it was run prior to the mocking. So you are mocking the class, but too late.
+Now the above code Would mock PyMongo to refer to `mongomock.MongoClient`, but your test would still fail. This is because the `src.database` module has already been loaded prior to running your test. So yes, `PyMongo` now refers to `mongomock.MongoClient`, but your `mongo` variable is assigned to an instance of `PyMongo`, because it was run prior to the mocking. So you are mocking the class, but too late.
 
-You could then consider either trying to mock the src.database module before-hand, or patching the app.database.mongo object with our mongomock.MongoClient instance.
+You could then consider either trying to mock the `src.database` module before-hand, or patching the `src.database.mongo` object with our `mongomock.MongoClient` instance.
 
-If we consider the latter, we can do it with some changes to our code. What we want, is to mock the "mongo" object in "src.database" so instead of referring to an instance of PyMongo, it now refers to an instance of mongomock.MongoClient. Now we need to remember namespaces. In both "src/application.py" and "src/controllers/article_controllers.py", we import "mongo". This means that in each of those namespaces, they already have an reference of mongo. So if we then patch "mongo" in the "src.database" module, it won't be reflected in the "mongo" object that exists in those two namespaces. So the code change we would need to make is to not import "mongo" into those two modules, and instead to import the "app.database" module, and access mongo by using "app.database.mongo".
+If we consider the latter, we can do it with some changes to our code. What we want, is to mock the `mongo` object in `src.database` so instead of referring to an instance of `PyMongo`, it now refers to an instance of `mongomock.MongoClient`. Now we need to remember namespaces. In both `src/application.py` and `src/controllers/article_controllers.py`, we import `mongo`. This means that in each of those namespaces, they already have an reference of `mongo`. So if we then patch `mongo` in the `src.database` module, it won't be reflected in the `mongo` object that exists in those two namespaces. So the code change we would need to make is to not import `mongo` into those two modules, and instead to import the `app.database` module, and access mongo by using `app.database.mongo`.
 
 These changes would like this this:
 ```
@@ -224,7 +224,7 @@ class ArticleController:
     ...
 ```
 
-In our test, we can then patch the app.database module object so that mongo refers to our mongomock.MongoClient instance, instead of PyMongo.
+In our test, we can then patch the `app.database` module object so that `mongo` refers to our `mongomock.MongoClient` instance, instead of `PyMongo`.
 ```
 # tests/articles_test.py
 import unittest
@@ -239,7 +239,7 @@ class TestApplication(unittest.TestCase):
       # Create the app and run the tests
       ...
 ```
-At this point, we are patching the correct object in the correct namespace, and the consumers of mongo are getting our patched resource. However, flask_pymongo.PyMongo and mongomock.MongoClient aren't referencing the same type of object. PyMongo is a superclass of MongoClient. So you will get this error:
+At this point, we are patching the correct object in the correct namespace, and the consumers of `mongo` are getting our patched resource. However, `flask_pymongo.PyMongo` and `mongomock.MongoClient` aren't referencing the same type of object. `PyMongo` is a superclass of `MongoClient`. So you will get this error:
 ```
 Traceback (most recent call last):
   File "/Users/***/projects/flask-pymongo-unittest-guide/tests/articles_test.py", line 20, in test_create_article
@@ -248,7 +248,7 @@ Traceback (most recent call last):
     src.database.mongo.init_app(app)
 TypeError: 'Database' object is not callable
 ```
-or if you patched with mongomock.MongoClient, and not mongomock.MongoClient(), you will get this error.
+or if you patched with `mongomock.MongoClient`, and not `mongomock.MongoClient()`, you will get this error.
 ```
 Traceback (most recent call last):
   File "/Users/***/projects/flask-pymongo-unittest-guide/tests/articles_test.py", line 20, in test_create_article
@@ -258,7 +258,7 @@ Traceback (most recent call last):
 AttributeError: type object 'MongoClient' has no attribute 'init_app'
 ```
 The latter error is a bug in your code, and once you fix it, you will get the first error instead.
-To handle this, we will can create a dummy superclass that has the init_app method, and we can patch mongo with that instead:
+To handle this, we will can create a dummy superclass that has the `init_app` method, and we can patch mongo with that instead:
 ```
 # tests/articles_test.py
 import unittest
@@ -277,9 +277,9 @@ class TestApplication(unittest.TestCase):
       # Create the app and run the tests
       ...
 ```
-Note again that we are patching src.database.mongo with an instance of PyMongoMock, not the the class.
+Note again that we are patching `src.database.mongo` with an instance of `PyMongoMock`, not the the class.
 
-At this point your test will be able to be run successfully with a mocked instance of mongo. You can check out the specific tests I have written for this guide in the repo.
+At this point your test will be able to be run successfully with a mocked instance of `mongo`. You can check out the specific tests I have written for this guide in the repo.
 
 Patching is a very powerful tool in Python and the unittest framework, and writing strong, self-contained unit tests is how you guarantee your application behaves as expected. The combination of patching and namespaces can be confusing, and I have seen many tests where the environment has been patched incorrectly, leading to tests that are passing, but will likely fail on other machines, so its a very important part of the Python to learn about.
 
