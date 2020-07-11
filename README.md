@@ -7,6 +7,7 @@ I found guides using PyTest, and guides that were for Flask apps that were using
 Seeing as many developers are introduced to web development through Flask, I thought this little guide might help someone some day. Note this guides skips a few practices to make the codebase smaller so we can focus on the matter at hand.
 
 The specific stack I am using is:
+- Python3
 - Flask
 - PyMongo (using init_app)
 - Unittest
