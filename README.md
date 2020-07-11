@@ -1,4 +1,4 @@
-# Unit testing PyMongo Flask applications with MongoClient
+# Unit testing PyMongo Flask applications with mongomock
 ## Introduction
 This is a niche guide. The reason for this guide is that during a project, I needed to find a way to test a simple Flask PyMongo CRUD application. While attempting to test, I found little online documentation with regard to how to mock Mongo as part of my unit tests, and found no answers on StackOverflow that worked easily.
 
@@ -14,10 +14,10 @@ The specific stack I am using is:
 ## Application
 The application we are intending to create is a simple CRUD application, made in Flask, with a MongoDB database. We will expose endpoints for creating, retrieving, and deleting "article" resources. The content of these resources is simply the "author", the "content", and a list of "tags".
 
-All the code for this project can be found in the GitHub reposity: https://github.com/reritom/Flask-PyMongo-Unittest-Guide.
+All the code for this project can be found in the GitHub repository: https://github.com/reritom/Flask-PyMongo-Unittest-Guide.
 
 ## Directory layout
-We will follow a best practice regarding the setup of the repo. There will be a "src" directory for our source code, a "tests" directory for our tests, and the application would nominally be deployed by running "python main.py".
+We will follow a best practice regarding the setup of the repo. There will be a `src` directory for our source code, a `tests` directory for our tests, and the application would nominally be deployed by running `python main.py`.
 
 Our directory will look like this (ignoring the README, requirements.txt, and other miscellaneous files):
 ```
@@ -34,6 +34,11 @@ Our directory will look like this (ignoring the README, requirements.txt, and ot
     ├── __init__.py
     └── articles_test.py
 ```
+## Installation and Running
+### Installation
+If you are interested in testing the code. Create a virtual environment, run `pip install -r requirements.txt`.
+### Running tests
+To run the tests, you can use `python -m unittest discover -p '*_test.py'`.
 
 ## Source
 If you have worked with Flask before, you will know there is typically an `application.py` (or sometimes you put this in the `__init__.py` of the src). Then, you create a `database.py` which will contain your database object. When you create your first Flask app, often you will put the database object in your `application.py`, but as soon as you start splitting your application, you encounter circular import problems if the database exists in your `application.py`. So we create two files: `database.py`, `application.py`.
