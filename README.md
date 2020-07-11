@@ -142,7 +142,7 @@ To do this we will use a library called `mongomock`, which provides a class call
 ### Patching
 Patching is a way of replacing an object in the program namespace with something else. Often this is used to patch the environment or patch API calls. Imagine you have a script that runs in one way if `os.environ["FLAG"] == True`, and another way if `os.environ["FLAG"] == False`. You would want to create two tests, one for each case, and you then patch os.environ to set FLAG to the correct value for each test.
 
-An important thing to note when patching, is that you patch and object in the namespace of the module which is consuming the object. What does this mean? Well, when you use os.environ, you import `os`. Effectively, it means that in your module there is now a module object called `os`, and this is what you want to patch, because this is what your code is consuming when you use os.environ later.
+An important thing to note when patching, is that you can either patch an attribute of an object, or patch an object in the namespace of the module which is consuming the object (they are effectively the same). What does this mean? Well, when you use os.environ, you import `os`. Effectively, it means that in your module there is now a module object called `os`, and this is what you want to patch, because this is what your code is consuming when you use os.environ later.
 
 Practically it is as follows:
 ```
