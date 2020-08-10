@@ -271,7 +271,7 @@ import unittest
 from unittest.mock import patch
 from src import create_app
 import src.database
-import mongomock
+from mongomock import MongoClient
 
 class PyMongoMock(MongoClient):
     def init_app(self, app):
